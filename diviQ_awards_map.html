@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DiviQ Scholarship Awards Map</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1a1f3a 100%);
+            color: #fff;
+        }
+
+        .container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #000 0%, #1a1f3a 100%);
+            padding: 2rem;
+            border-bottom: 2px solid #6366f1;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .header p {
+            font-size: 1rem;
+            color: #a0aec0;
+        }
+
+        .legend {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .stat-number {
+            font-weight: 700;
+            color: #6366f1;
+            font-size: 1.3rem;
+        }
+
+        #map {
+            flex: 1;
+            position: relative;
+        }
+
+        .marker-popup {
+            font-family: inherit;
+        }
+
+        .marker-popup h3 {
+            margin: 0 0 0.5rem 0;
+            color: #1a202c;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .marker-popup p {
+            margin: 0.3rem 0;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+
+        .marker-popup .label {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 0.85rem;
+            margin-top: 0.3rem;
+        }
+
+        /* Custom leaflet styling */
+        .leaflet-control-attribution {
+            background: rgba(0,0,0,0.7) !important;
+            color: #fff !important;
+        }
+
+        .leaflet-control-attribution a {
+            color: #6366f1 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>DiviQ Scholarship Awards</h1>
+            <p>Global network of quantum scientists traveling to international conferences</p>
+            <div class="stats">
+                <div class="stat">
+                    <span class="stat-number">9</span>
+                    <span>Recipients</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">9</span>
+                    <span>Universities</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-number">6</span>
+                    <span>Conferences</span>
+                </div>
+            </div>
+        </div>
+        <div id="map"></div>
+    </div>
+
+    <script>
+        const awards = [{"name": "Aanal Jayesh Shah", "university": "Purdue University", "university_coordinates": [40.4259, -86.9081], "destination": "Les Houches Summer School", "destination_coordinates": [45.5031, 6.787]}, {"name": "Arijit Gupta", "university": "Florida State University", "university_coordinates": [30.4383, -84.2807], "destination": "Les Houches Summer School", "destination_coordinates": [45.5031, 6.787]}, {"name": "Favour Alfred", "university": "Ladoke Akintola University of Technology", "university_coordinates": [8.8753, 4.7953], "destination": "QEI Workshop at ICFO", "destination_coordinates": [41.4697, 1.934]}, {"name": "Kudzai Musarandega", "university": "University of Arizona", "university_coordinates": [32.2313, -110.9265], "destination": "Quantum Technology Summer School", "destination_coordinates": [45.4042, -73.5522]}, {"name": "Clara Wassner", "university": "Free University Berlin", "university_coordinates": [52.4558, 13.3094], "destination": "QIP", "destination_coordinates": [56.9496, 24.1052]}, {"name": "Hyeok Kim", "university": "University of Washington", "university_coordinates": [47.6554, -122.3035], "destination": "ACM Human-computer interaction workshop", "destination_coordinates": [35.6762, 139.7674]}, {"name": "Josephine Meyer", "university": "Colorado University of Boulder", "university_coordinates": [40.0084, -105.2705], "destination": "Quantum Technology Summer School", "destination_coordinates": [45.4042, -73.5522]}, {"name": "Lorena Ballesteros Ferraz", "university": "CY Cergy Paris University", "university_coordinates": [49.0426, 2.0772], "destination": "Quantum Technology Summer School", "destination_coordinates": [45.4042, -73.5522]}, {"name": "Laura Lewis", "university": "University of Edinburgh", "university_coordinates": [55.9426, -3.1878], "destination": "APS Meeting", "destination_coordinates": [33.7373, -117.9367]}];
+
+        // Initialize map - centered on globe
+        const map = L.map('map', {
+            center: [20, 0],
+            zoom: 2.5,
+            maxZoom: 18,
+            minZoom: 2
+        });
+
+        // Add tile layer with dark theme
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; OpenStreetMap contributors, &copy; CARTO',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Color scheme (DiviQ-inspired)
+        const colors = ['#6366f1', '#a855f7', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#06b6d4', '#8b5cf6'];
+
+        // Create arrow SVG marker for polylines
+        const svgArrowHead = `<svg width="12" height="12" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="6,0 12,10 6,8 0,10" fill="{color}" />
+        </svg>`;
+
+        // Add arrows and markers for each award
+        const bounds = [];
+        awards.forEach((award, idx) => {
+            if (award.university_coordinates && award.destination_coordinates) {
+                const color = colors[idx % colors.length];
+                const [uLat, uLon] = award.university_coordinates;
+                const [dLat, dLon] = award.destination_coordinates;
+
+                // Get first letter of first name
+                const initials = award.name.charAt(0).toUpperCase();
+
+                bounds.push([uLat, uLon]);
+                bounds.push([dLat, dLon]);
+
+                // Create curved route with circuit-board vibe
+                let routePoints = [];
+
+                // Calculate midpoint and perpendicular offset for subtle curve
+                const midLat = (uLat + dLat) / 2;
+                const midLon = (uLon + dLon) / 2;
+                const latDiff = dLat - uLat;
+                const lonDiff = dLon - uLon;
+
+                // Perpendicular vector (rotate 90 degrees)
+                const perpLat = -lonDiff;
+                const perpLon = latDiff;
+                const perpMag = Math.sqrt(perpLat * perpLat + perpLon * perpLon);
+
+                // Normalize and apply subtle offset based on index (creates variation)
+                const offset = (perpMag / 30) * (idx % 2 === 0 ? 1 : -1);
+                const curveLat = midLat + (perpLat / perpMag) * offset;
+                const curveLon = midLon + (perpLon / perpMag) * offset;
+
+                // Special case: Hyeok Kim (U. Washington to Yokohama) - go around the world
+                if (award.name === 'Hyeok Kim') {
+                    routePoints = [
+                        [uLat, uLon],           // Seattle
+                        [48, -125],             // Curve northwest
+                        [52, -110],             // Across Canada
+                        [50, -40],              // Atlantic
+                        [45, 10],               // Europe
+                        [35, 50],               // Middle East curve
+                        [dLat, dLon]            // Yokohama
+                    ];
+                } else {
+                    // Normal curved route with 2-3 intermediate points
+                    const quarter1Lat = uLat + latDiff * 0.33;
+                    const quarter1Lon = uLon + lonDiff * 0.33;
+                    const quarter2Lat = uLat + latDiff * 0.67;
+                    const quarter2Lon = uLon + lonDiff * 0.67;
+
+                    routePoints = [
+                        [uLat, uLon],
+                        [quarter1Lat + (perpLat / perpMag) * offset * 0.8, quarter1Lon + (perpLon / perpMag) * offset * 0.8],
+                        [curveLat, curveLon],
+                        [quarter2Lat + (perpLat / perpMag) * offset * 0.8, quarter2Lon + (perpLon / perpMag) * offset * 0.8],
+                        [dLat, dLon]
+                    ];
+                }
+
+                // Draw arrow line from university to destination
+                const line = L.polyline(routePoints, {
+                    color: color,
+                    weight: 2.5,
+                    opacity: 0.75,
+                    className: 'award-line',
+                    smoothFactor: 1.0
+                }).addTo(map);
+
+                // University marker - initials in colored bubble
+                const uIcon = L.divIcon({
+                    html: `<div style="
+                        background: ${color};
+                        border: 3px solid white;
+                        border-radius: 50%;
+                        width: 50px;
+                        height: 50px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: 700;
+                        color: white;
+                        font-size: 24px;
+                        box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+                        margin: 0;
+                        padding: 0;
+                        line-height: 1;
+                    ">${initials}</div>`,
+                    className: 'university-marker',
+                    iconSize: [50, 50],
+                    iconAnchor: [25, 25],
+                    popupAnchor: [0, -30]
+                });
+
+                const uMarker = L.marker([uLat, uLon], { icon: uIcon }).addTo(map);
+                uMarker.bindPopup(`
+                    <div class="marker-popup">
+                        <h3>${award.name}</h3>
+                        <p class="label">📍 University</p>
+                        <p><strong>${award.university}</strong></p>
+                        <p style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid #e2e8f0;" class="label">🎯 Conference</p>
+                        <p><strong>${award.destination}</strong></p>
+                    </div>
+                `, { maxWidth: 320 });
+
+                // Destination marker - small solid circle (no popup)
+                const dIcon = L.divIcon({
+                    html: `<div style="
+                        background: ${color};
+                        border: none;
+                        border-radius: 50%;
+                        width: 18px;
+                        height: 18px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+                        margin: 0;
+                        padding: 0;
+                    "></div>`,
+                    className: 'destination-marker',
+                    iconSize: [18, 18],
+                    iconAnchor: [9, 9],
+                    popupAnchor: [0, -15]
+                });
+
+                const dMarker = L.marker([dLat, dLon], { icon: dIcon }).addTo(map);
+            }
+        });
+
+        // Fit bounds to show all markers
+        if (bounds.length > 0) {
+            const latlngbounds = L.latLngBounds(bounds);
+            map.fitBounds(latlngbounds, { padding: [50, 50], maxZoom: 4 });
+        }
+    </script>
+</body>
+</html>
